@@ -1,0 +1,76 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>CSV Data Explorer</title><style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f4f6fb;--card:#fff;--ink:#1d2433;--mut:#6a7389;--line:#e4e8f1;--acc:#5145cd;--track:#e9edf5;--bar:#7c6fe0;--okb:#e3f6ea;--ok:#1b8a4b;--bad:#c0392b}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1524;--card:#18203a;--ink:#e8ecf8;--mut:#9aa4c4;--line:#2a3354;--acc:#a5b4fc;--track:#263150;--bar:#8b7ff0;--okb:#12372a;--ok:#5fd08f;--bad:#ff8b7e}}
+:root[data-theme="dark"]{--bg:#0f1524;--card:#18203a;--ink:#e8ecf8;--mut:#9aa4c4;--line:#2a3354;--acc:#a5b4fc;--track:#263150;--bar:#8b7ff0;--okb:#12372a;--ok:#5fd08f;--bad:#ff8b7e}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Segoe UI,Arial,sans-serif}
+header{background:linear-gradient(120deg,#5145cd,#7c3aed);color:#fff;padding:24px 16px}
+.w{max-width:1100px;margin:0 auto;padding:0 16px}header .w{padding:0}h1{margin:0 0 6px;font-size:26px}header p{margin:0;opacity:.92;font-size:14px}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0}
+.tag{background:var(--okb);color:var(--ok);border-radius:8px;padding:6px 10px;font-size:13px}
+.btn,.tb{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:8px 12px;font:600 13px inherit;font-family:inherit;cursor:pointer}
+@media(prefers-color-scheme:dark){.btn,.tb{color:#10131f}}
+.btn.s,.tb{background:var(--card);color:var(--acc);border:1px solid var(--line)}.tb.a{background:var(--acc);color:#fff;border-color:var(--acc)}
+@media(prefers-color-scheme:dark){.tb.a{color:#10131f}}
+input[type=file]{display:none}.err{color:var(--bad);font-size:13px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+input,select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:inherit;max-width:100%}
+label.l{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:10px 0 4px}
+.k{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+.c{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}.k .c{margin:0}
+.k span{display:block;color:var(--mut);font-size:12px;text-transform:uppercase;font-weight:700}.k strong{display:block;font-size:24px;margin-top:6px;color:var(--acc)}
+h2{font-size:16px;margin:0 0 12px;color:var(--acc)}.g{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mut{color:var(--mut);font-size:13px}.sc{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--mut);font-size:12px;text-transform:uppercase}td.n,th.n{text-align:right}
+pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;font:13px Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;margin:10px 0 0;max-height:360px;overflow:auto}
+svg{width:100%;height:auto;display:block}svg text{fill:var(--mut);font-size:11px}
+@media(max-width:760px){.g{grid-template-columns:1fr}}
+</style></head><body><header><div class="w"><h1>🗂️ CSV Data Explorer</h1><p>Upload, explore, search, modify and analyze CSV datasets</p></div></header><main class="w">
+<div class="bar"><span class="tag" id="tag">Built-in sample dataset from the app</span><label class="btn" for="f">Upload CSV</label><input id="f" type="file" accept=".csv"><button class="btn s" onclick="loadSample()">Load sample dataset</button><span class="err" id="err"></span></div>
+<div class="k" id="k"></div><div class="tabs" id="tabs"></div><div id="p"></div>
+</main><script>
+var $=function(i){return document.getElementById(i)};
+function esc(s){return String(s==null?"":s).replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
+function fm(x,d){return Number(x).toLocaleString("en-IN",{minimumFractionDigits:d,maximumFractionDigits:d})}
+function g7(x){return parseFloat(Number(x).toPrecision(7))}
+function csv(t){var L=t.replace(/\r/g,"").split("\n").filter(function(l){return l.trim()});if(!L.length)throw new Error("The CSV file is empty.");
+ function sp(l){var o=[],c="",q=0,i,ch;for(i=0;i<l.length;i++){ch=l[i];if(ch=='"'){if(q&&l[i+1]=='"'){c+='"';i++}else q=!q}else if(ch==","&&!q){o.push(c.trim());c=""}else c+=ch}o.push(c.trim());return o}
+ return{h:sp(L[0]),r:L.slice(1).map(sp)}}
+function tbl(h,rows,nc){nc=nc||[];return"<table><thead><tr>"+h.map(function(x,i){return"<th"+(nc.indexOf(i)>-1?" class='n'":"")+">"+esc(x)+"</th>"}).join("")+"</tr></thead><tbody>"+rows.map(function(r){return"<tr>"+r.map(function(c,i){return"<td"+(nc.indexOf(i)>-1?" class='n'":"")+">"+esc(c)+"</td>"}).join("")+"</tr>"}).join("")+"</tbody></table>"}
+function kpis(a){$("k").innerHTML=a.map(function(x){return"<div class='c'><span>"+x[0]+"</span><strong>"+esc(x[1])+"</strong></div>"}).join("")}
+function vbar(el,lab,val,o){o=o||{};var f=o.fmt||function(v){return v},mx=Math.max.apply(null,val.concat([1])),st=o.step||(mx>500?100:mx>200?50:mx>100?20:mx>50?10:mx>20?5:mx>10?2:1),top=o.max||Math.ceil(mx/st)*st,n=val.length,rot=n>8,W=720,H=o.h||300,L=44,B=rot?80:32,T=16,pw=W-L-10,ph=H-B-T,s=pw/n,bw=Math.min(s*.7,64),out="",v,y;
+ for(v=0;v<=top;v+=st){y=T+ph-v/top*ph;out+="<line x1='"+L+"' x2='"+(W-10)+"' y1='"+y+"' y2='"+y+"' stroke='var(--line)'/><text x='"+(L-6)+"' y='"+(y+4)+"' text-anchor='end'>"+v+"</text>"}
+ val.forEach(function(v,i){var h=v/top*ph,x=L+i*s+(s-bw)/2,c=o.col?o.col[i%o.col.length]:"var(--bar)";y=T+ph-h;
+  out+="<rect x='"+x+"' y='"+y+"' width='"+bw+"' height='"+h+"' rx='3' fill='"+c+"'><title>"+esc(lab[i])+": "+f(v)+"</title></rect><text x='"+(x+bw/2)+"' y='"+(y-4)+"' text-anchor='middle'>"+f(v)+"</text>"+(rot?"<text transform='translate("+(x+bw/2+4)+","+(T+ph+8)+") rotate(-90)' text-anchor='end'>"+esc(lab[i])+"</text>":"<text x='"+(x+bw/2)+"' y='"+(T+ph+18)+"' text-anchor='middle'>"+esc(lab[i])+"</text>")});
+ el.innerHTML="<svg viewBox='0 0 "+W+" "+H+"' role='img'>"+out+"</svg>"}
+function wire(cb){$("f").addEventListener("change",function(e){var f=e.target.files[0];$("err").textContent="";if(!f)return;var rd=new FileReader();rd.onload=function(){try{cb(rd.result);$("tag").textContent="Showing: "+f.name}catch(x){$("err").textContent=x.message}};rd.readAsText(f)})}
+
+var SAMP={h:["Student_ID","Name","Department","Age","Marks","Status"],r:[[101,"Arun","AI&DS",20,85,"Pass"],[102,"Priya","CSE",19,92,"Pass"],[103,"Karthik","IT",21,67,"Pass"],[104,"Divya","AI&DS",20,45,"Pass"],[105,"Santhosh","ECE",22,32,"Fail"],[106,"Meena","CSE",19,88,"Pass"],[107,"Rahul","IT",21,76,"Pass"],[108,"Anu","AI&DS",20,95,"Pass"],[109,"Vijay","ECE",22,56,"Pass"],[110,"Keerthana","CSE",19,98,"Pass"]]};
+var H,R,tab="dash",msg="",TABS=[["dash","Dashboard"],["data","Explore Data"],["list","R/Python List View"],["mod","Modify Data"],["stats","Statistics"]];
+function isNum(j){var any=false,i,v;for(i=0;i<R.length;i++){v=R[i][j];if(v===""||v==null)continue;if(isNaN(Number(v)))return false;any=true}return any}
+function numv(j){return R.map(function(r){return r[j]}).filter(function(v){return v!==""&&v!=null}).map(Number)}
+function qt(a,p){var s=a.slice().sort(function(x,y){return x-y}),k=(s.length-1)*p,f=Math.floor(k);return s[f]+(s[Math.min(f+1,s.length-1)]-s[f])*(k-f)}
+function r2(x){return Math.round(x*100)/100}
+function opts(){return H.map(function(c,i){return"<option value='"+i+"'>"+esc(c)+"</option>"}).join("")}
+function setData(h,r){var j;if(!h.length||!h[0])throw new Error("The file does not contain any columns.");r.forEach(function(x){while(x.length<h.length)x.push("")});H=h;R=r;for(j=0;j<H.length;j++)if(isNum(j))R.forEach(function(x){if(x[j]!=="")x[j]=Number(x[j])});msg="";render()}
+function loadSample(){setData(SAMP.h.slice(),SAMP.r.map(function(r){return r.slice()}));$("tag").textContent="Built-in sample dataset from the app"}
+function drawData(){var q=($("q")?$("q").value:"").trim().toLowerCase(),rows=R.filter(function(r){return!q||r.some(function(c){return String(c).toLowerCase().indexOf(q)>-1})});$("cnt").textContent="Showing "+rows.length+" matching records.";$("dt").innerHTML=rows.length?tbl(H,rows):"<p>No matching records found.</p>"}
+function doList(){var c=+$("li_c").value,i=parseInt($("li_i").value,10);$("li_r").textContent=(isNaN(i)||i<1||i>R.length)?"Index out of range. Valid range: 1 to "+R.length+".":"Column: "+H[c]+" | Index: "+i+" | Value: "+R[i-1][c]}
+function cv(c,v){return isNum(c)&&v!==""&&!isNaN(Number(v))?Number(v):v}
+function doMod(){var c=+$("m_c").value,i=parseInt($("m_r").value,10),v=$("m_v").value;if(isNaN(i)||i<1||i>R.length)msg="Row index out of range. Valid range: 1 to "+R.length+".";else if(v==="")msg="New value cannot be empty.";else{R[i-1][c]=cv(c,v);msg="Updated "+H[c]+", row "+i+"."}render()}
+function doApp(){var c=+$("a_c").value,v=$("a_v").value,row;if(v==="")msg="Value to append cannot be empty.";else{row=H.map(function(){return""});row[c]=cv(c,v);R.push(row);msg="Appended a value to "+H[c]+". Dataset now has "+R.length+" rows."}render()}
+function render(){var nums=0,miss=0,j,h="",nj=[];
+ for(j=0;j<H.length;j++)if(isNum(j)){nums++;nj.push(j)}
+ R.forEach(function(r){r.forEach(function(c){if(c===""||c==null)miss++})});
+ kpis([["Total Rows",R.length],["Total Columns",H.length],["Numeric Columns",nums],["Missing Values",miss]]);
+ $("tabs").innerHTML=TABS.map(function(t){return"<button class='tb"+(t[0]==tab?" a":"")+"' onclick=\"tab='"+t[0]+"';render()\">"+t[1]+"</button>"}).join("");
+ if(tab=="dash"){h="<div class='c'><h2>Dataset Overview</h2><p><b>Rows:</b> "+R.length+" &nbsp; <b>Columns:</b> "+H.length+"</p><p><b>Column names:</b> "+esc(H.join(", "))+"</p><p class='mut'>Demonstrates CSV reading, list conversion, indexing, appending, modifying values and column counting.</p></div><div class='c'><h2>Numeric Data Snapshot</h2>"+(nj.length?tbl(["Column","Minimum","Maximum","Average"],nj.map(function(j){var a=numv(j);return[H[j],r2(Math.min.apply(null,a)).toFixed(1),r2(Math.max.apply(null,a)).toFixed(1),r2(a.reduce(function(x,y){return x+y},0)/a.length).toFixed(1)]})):"<p>No numeric columns found.</p>")+"</div>"}
+ if(tab=="data")h="<div class='c'><h2>Dataset Records</h2><input id='q' placeholder='Search any column' oninput='drawData()'><p class='mut' id='cnt'></p><div class='sc' id='dt'></div></div>";
+ if(tab=="list"){var o={};H.forEach(function(c,j){o[c]=R.map(function(r){return r[j]})});h="<div class='c'><h2>Convert Dataset into a List</h2><p class='mut'>Each CSV column is stored as a named list entry.</p><pre>"+esc(JSON.stringify(o,null,2))+"</pre></div><div class='c'><h2>Access a Component by Index</h2><div class='bar' style='margin:0'><select id='li_c'>"+opts()+"</select><input id='li_i' type='number' min='1' value='1' style='width:90px'><button class='btn' onclick='doList()'>Access List Element</button></div><p id='li_r'>Pick a column and an index (starts at 1).</p></div>"}
+ if(tab=="mod")h="<div class='g'><div class='c'><h2>Modify Existing Value</h2><label class='l'>Column</label><select id='m_c'>"+opts()+"</select><label class='l'>Row index (starts at 1)</label><input id='m_r' type='number' min='1' value='1'><label class='l'>New value</label><input id='m_v'><p><button class='btn' onclick='doMod()'>Update Value</button></p></div><div class='c'><h2>Append a Value</h2><p class='mut'>Adds a value to one column; other columns in the new row are left blank.</p><label class='l'>Column</label><select id='a_c'>"+opts()+"</select><label class='l'>Value to append</label><input id='a_v'><p><button class='btn' onclick='doApp()'>Append Value</button></p></div></div>"+(msg?"<div class='tag' style='margin-bottom:14px'>"+esc(msg)+"</div>":"")+"<div class='c'><h2>Current Dataset</h2><div class='sc'>"+tbl(H,R)+"</div></div>";
+ if(tab=="stats"){var ci=H.map(function(c,j){var m=R.filter(function(r){return r[j]===""||r[j]==null}).length,t=isNum(j)?(numv(j).every(function(v){return v%1===0})?"int64":"float64"):"object";return[c,t,R.length-m,m]});
+  var sm=["count","mean","std","min","25%","50%","75%","max"],ss=nj.map(function(j){var a=numv(j),n=a.length,mn=a.reduce(function(x,y){return x+y},0)/n,sd=n>1?Math.sqrt(a.reduce(function(x,y){return x+(y-mn)*(y-mn)},0)/(n-1)):NaN;return[n,mn,sd,Math.min.apply(null,a),qt(a,.25),qt(a,.5),qt(a,.75),Math.max.apply(null,a)].map(function(v){return isNaN(v)?"":r2(v)})});
+  h="<div class='c'><h2>Column Information</h2><div class='sc'>"+tbl(["Column","Data Type","Non-missing","Missing"],ci)+"</div></div><div class='c'><h2>Summary Statistics</h2><div class='sc'>"+(nj.length?tbl([""].concat(nj.map(function(j){return H[j]})),sm.map(function(m,i){return[m].concat(ss.map(function(c){return c[i]}))}),nj.map(function(x,i){return i+1})):"<p>No numeric columns found.</p>")+"</div></div>"}
+ $("p").innerHTML=h;if(tab=="data")drawData()}
+wire(function(t){var d=csv(t);setData(d.h,d.r)});loadSample();
+</script></body></html>
